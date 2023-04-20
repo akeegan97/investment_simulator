@@ -1,0 +1,13 @@
+[package]
+name = "investment_simulators"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.24"
+eframe = "0.21.3"
+egui = "0.21.0"
+egui_extras = { version = "0.21.0", features = ["image", "datepicker"] }
+image = "0.24.6"
