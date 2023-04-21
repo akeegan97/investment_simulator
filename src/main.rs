@@ -2,7 +2,7 @@ use eframe::egui;
 use egui::{Margin,Color32, RichText};
 
 
-use pages::main_page::Sectors;
+use pages::{main_page::Sectors, product_page::{LISTINGS, PACKAGES,IbfpType, Fund}};
 mod pages{
     pub mod main_page;
     pub mod product_page;
@@ -10,22 +10,27 @@ mod pages{
 }
 
 //fn to set fonts for the text style
-fn setup(ctx: &egui::Context){
+fn setup(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
     fonts.font_data.insert(
-        "Times_New_Roman".to_owned(),
-        egui::FontData::from_static(include_bytes!("../assets/TimesNewRoman.ttf")),
+        "my_font".to_owned(),
+        egui::FontData::from_static(include_bytes!(
+            "../assets/TimesNewRoman.ttf"
+        )),
     );
     fonts
         .families
         .entry(egui::FontFamily::Proportional)
         .or_default()
-        .push("Times_New_Roman".to_owned());
+        .insert(0, "my_font".to_owned());
+
     fonts
         .families
         .entry(egui::FontFamily::Monospace)
         .or_default()
-        .push("Times_New_Roman".to_owned());
+        .push("my_font".to_owned());
+
+    // Tell egui to use these fonts:
     ctx.set_fonts(fonts);
 }
 fn main()->Result<(),eframe::Error>{
@@ -46,7 +51,14 @@ enum Page{
 }
 struct Sim{
     selected_page: Option<Page>,
-    product: Option<Sectors>
+    product: Option<Sectors>,
+    selected_ibfl: Option<LISTINGS>,
+    selected_package: Option<PACKAGES>,
+    selected_mgmt:bool,
+    selected_ibfp:Option<IbfpType>,
+    selected_fund:Option<Fund>,
+    years:f64,
+    
 }
 impl Sim{
     fn new(cc:&eframe::CreationContext<'_>)->Self{
@@ -54,6 +66,12 @@ impl Sim{
         Self{
             selected_page: Some(Page::Main),
             product: None,
+            selected_ibfl:None,
+            selected_package:None,
+            selected_mgmt:false,
+            selected_ibfp:None,
+            selected_fund:None,
+            years:0.0,
         }
     }
 }
@@ -87,8 +105,28 @@ impl eframe::App for Sim{
         );
         match self.selected_page{
             Some(Page::Main)=> pages::main_page::show(ctx, &mut self.product),
-            Some(Page::Products)=> pages::product_page::show(),
-            Some(Page::Simulate) => pages::simulation_page::show(),
+            Some(Page::Products)=> match self.product {
+                                                        Some(Sectors::InbestForLife) => pages::product_page::inbest_for_life(ctx, &mut self.selected_ibfl,&mut self.selected_package, &mut self.selected_mgmt),
+                                                        Some(Sectors::InbestForProfit)=> pages::product_page::inbest_for_profit(ctx,&mut self.selected_ibfp, &mut self.selected_package,&mut self.selected_mgmt),
+                                                        Some(Sectors::InbestFund) => pages::product_page::inbest_fund(ctx, &mut self.selected_fund),
+                                                        _ => (),
+                                                        },
+            Some(Page::Simulate) => match self.product{
+                                                        Some(Sectors::InbestForLife) => pages::simulation_page::ibfl_sim(ctx,&mut self.years, &mut self.selected_ibfl),
+                                                        Some(Sectors::InbestForProfit) => match self.selected_ibfp{
+                                                                                                               Some(IbfpType::Precon) => pages::simulation_page::ibfp_1_precon_sim() ,
+                                                                                                               Some(IbfpType::Mkt)=> pages::simulation_page::ibfp_mkt_sim(),
+                                                                                                               Some(IbfpType::Mix)=> pages::simulation_page::ibfp_precon_mkt(),
+                                                                                                               _ => (),
+                                                        }
+                                                        Some(Sectors::InbestFund)=> match self.selected_fund{
+                                                            Some(Fund::Core) => pages::simulation_page::fund_core(),
+                                                            Some(Fund::Plus) => pages::simulation_page::fund_plus(),
+                                                            Some(Fund::FixedIncome)=>pages::simulation_page::fund_fi(),
+                                                            _=>(),
+                                                        },
+                                                        _ => (),
+                                                        },
             None => println!("MASSIVE ERROR OCCURED"),
         }
     }

@@ -20,7 +20,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_for_life = *selected_product == Some(Sectors::InbestForLife);
                 let ibfl_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFL.webp")).unwrap();
                 col[0].add(egui::Image::new(ibfl_logo.texture_id(ctx),ibfl_logo.size_vec2()));
-                if col[0].add(egui::SelectableLabel::new(inbest_for_life,RichText::new(IBFL)
+                if col[0].add(egui::SelectableLabel::new(inbest_for_life,RichText::new(IBFL).font(FontId::proportional(18.0))
                     .color(Color32::WHITE)
                     .font(FontId::proportional(18.0))))
                         .clicked(){
@@ -29,7 +29,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_for_profit = *selected_product == Some(Sectors::InbestForProfit);
                 let ibfp_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFP.webp")).unwrap();
                 col[1].add(egui::Image::new(ibfp_logo.texture_id(ctx),ibfp_logo.size_vec2()));
-                if col[1].add(egui::SelectableLabel::new(inbest_for_profit,RichText::new(IBFP)
+                if col[1].add(egui::SelectableLabel::new(inbest_for_profit,RichText::new(IBFP).font(FontId::proportional(18.0))
                     .color(Color32::WHITE)
                     .font(FontId::proportional(18.0))))
                         .clicked(){
@@ -38,7 +38,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_fund = *selected_product == Some(Sectors::InbestFund);
                 let ibfund_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFund.webp")).unwrap();
                 col[2].add(egui::Image::new(ibfund_logo.texture_id(ctx),ibfund_logo.size_vec2()));
-                if col[2].add(egui::SelectableLabel::new(inbest_fund, RichText::new(FUND)
+                if col[2].add(egui::SelectableLabel::new(inbest_fund, RichText::new(FUND).font(FontId::proportional(18.0))
                     .color(Color32::WHITE)
                     .font(FontId::proportional(18.0))))
                         .clicked(){
