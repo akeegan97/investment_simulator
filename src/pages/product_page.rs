@@ -2,7 +2,6 @@ use eframe::egui;
 use egui::{Color32, RichText, FontId, Vec2, SelectableLabel};
 use egui_extras::RetainedImage;
 
-use super::main_page::FUND;
 #[derive(PartialEq)]
 pub enum LISTINGS {
     First,

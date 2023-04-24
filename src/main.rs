@@ -1,13 +1,16 @@
+
 use eframe::egui;
 use egui::{Margin,Color32, RichText};
 
 
+//use egui_extras::RetainedImage;
 use pages::{main_page::Sectors, product_page::{LISTINGS, PACKAGES,IbfpType, Fund}};
 mod pages{
     pub mod main_page;
     pub mod product_page;
     pub mod simulation_page;
 }
+
 
 //fn to set fonts for the text style
 fn setup(ctx: &egui::Context) {
@@ -32,6 +35,7 @@ fn setup(ctx: &egui::Context) {
 
     // Tell egui to use these fonts:
     ctx.set_fonts(fonts);
+    
 }
 fn main()->Result<(),eframe::Error>{
     let options = eframe::NativeOptions{
@@ -58,6 +62,7 @@ struct Sim{
     selected_ibfp:Option<IbfpType>,
     selected_fund:Option<Fund>,
     years:f64,
+    mort_rate:f64
     
 }
 impl Sim{
@@ -72,6 +77,7 @@ impl Sim{
             selected_ibfp:None,
             selected_fund:None,
             years:0.0,
+            mort_rate:5.0,
         }
     }
 }
@@ -112,7 +118,8 @@ impl eframe::App for Sim{
                                                         _ => (),
                                                         },
             Some(Page::Simulate) => match self.product{
-                                                        Some(Sectors::InbestForLife) => pages::simulation_page::ibfl_sim(ctx,&mut self.years, &mut self.selected_ibfl),
+                                                        Some(Sectors::InbestForLife) => pages::simulation_page::ibfl_sim(ctx,&mut self.years, &mut self.selected_ibfl, &mut self.selected_package,
+                                                                                                                        &mut self.mort_rate),
                                                         Some(Sectors::InbestForProfit) => match self.selected_ibfp{
                                                                                                                Some(IbfpType::Precon) => pages::simulation_page::ibfp_1_precon_sim() ,
                                                                                                                Some(IbfpType::Mkt)=> pages::simulation_page::ibfp_mkt_sim(),

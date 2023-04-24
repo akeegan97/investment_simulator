@@ -1,16 +1,15 @@
 use eframe::egui;
-use egui::{Color32, RichText, FontId, Vec2, SelectableLabel};
-use egui_extras::RetainedImage;
+use egui::{Color32, RichText, FontId, Vec2};
+use super::product_page::{LISTINGS, PACKAGES};
 
-use super::product_page::LISTINGS;
 
-pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LISTINGS>){
+pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LISTINGS>,selected_services:&mut Option<PACKAGES>, mort_rate:&mut f64){
     egui::TopBottomPanel::top("Heading").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
         ui.columns(3,|col|{
         col[1].add(egui::Label::new(RichText::new("FINANZ BUTIK SIMULATION").color(Color32::WHITE).font(FontId::proportional(24.0))));
         });
     });
-    egui::SidePanel::left("Paramter Panel").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
+    egui::SidePanel::left("Parameter Panel").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
         ui.add(egui::Label::new(RichText::new("Parameters").color(Color32::WHITE).font(FontId::proportional(18.0))));
         ui.separator();
         //getting listing selected:
@@ -33,12 +32,20 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
             _=>name_listing= "No Name".to_string(),
         };
         ui.label(RichText::new(format!("Selected Unit: {} ",name_listing)).color(Color32::WHITE).font(FontId::proportional(18.0)));
-        ui.label(RichText::new(format!("Price of Unit: {}",format_dollar_amount(picked_listing))).color(Color32::GREEN).font(FontId::proportional(18.0)));
+        ui.label(RichText::new(format!("Price of Unit: {}",format_dollar_amount(picked_listing))).color(Color32::WHITE).font(FontId::proportional(18.0)));
         ui.add(egui::Slider::new(years,0.0..=15.0).text(RichText::new("Years").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(0));
-
-
-
+        ui.add(egui::Slider::new(mort_rate,0.0..=10.0).text(RichText::new("Mortgage Rate").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
     });
+    let price_services:f64;
+        match *selected_services{
+            Some(PACKAGES::High)=> price_services = 10_000.0,
+            Some(PACKAGES::Med) => price_services = 7_000.0,
+            Some(PACKAGES::Low) => price_services = 5_000.0,
+            None => price_services = 0.0,
+        }
+    egui::CentralPanel::default().frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx, |ui|{
+    });
+
 }
 pub fn ibfp_1_precon_sim(){
 
