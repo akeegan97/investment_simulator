@@ -75,13 +75,13 @@ pub fn ibfl_precon(years:&mut f64, _interest_rate:&mut f64, mort_rate:&mut f64, 
                 cap_inject = 0.0;
             }
             
-            net_income += (rent_revenue_updated * (1.0 - *prop_mgmt) *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
+            net_income += (rent_revenue_updated *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
             if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
                 rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
-                net_income += rent_revenue_updated * (*prop_mgmt) * inside_expense_withholding + cap_inject - service_expense - mort_payment;
+                net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - service_expense - mort_payment;
             }
             prop_value += prop_value * (inside_app_rate*0.01);
-            results.push(([x,cap],[x,net_income],[x,prop_value],[x,mortgage_liability]));
+            results.push(([x,cap],[x,(net_income * (1.0 - *prop_mgmt))],[x,prop_value],[x,mortgage_liability]));
             x+=1.0;
             
         }
