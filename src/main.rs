@@ -82,6 +82,8 @@ struct Sim{
     app_rate:f64,
     ibfl_rent:f64,
     debt_ratio:f64,
+    rent_app:f64,
+    closing_costs:f64,
 }
 impl Sim{
     fn new(cc:&eframe::CreationContext<'_>)->Self{
@@ -96,11 +98,11 @@ impl Sim{
             selected_fund:None,
             years:0.0,
             mort_rate:5.0,
-            first_payment:NaiveDate::from_ymd_opt(2023, 10, 05).unwrap(),
-            second_payment:NaiveDate::from_ymd_opt(2023, 10, 05).unwrap(),
-            third_payment:NaiveDate::from_ymd_opt(2023, 10, 05).unwrap(),
-            fourth_payment:NaiveDate::from_ymd_opt(2023, 10, 05).unwrap(),
-            fifth_payment:NaiveDate::from_ymd_opt(2023, 10, 05).unwrap(),
+            first_payment:NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            second_payment:NaiveDate::from_ymd_opt(2024, 6, 1).unwrap(),
+            third_payment:NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            fourth_payment:NaiveDate::from_ymd_opt(2025, 6, 1).unwrap(),
+            fifth_payment:NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
             interest_rate:0.0,
             service_pkg_price:0.0,
             price_precon:0.0,
@@ -114,6 +116,8 @@ impl Sim{
             app_rate:0.0,
             ibfl_rent:0.0,
             debt_ratio:0.0,
+            rent_app:0.0,
+            closing_costs:0.0,
         }
     }
 }
@@ -177,7 +181,9 @@ impl eframe::App for Sim{
                                                                                                                         &mut self.selected_mgmt,
                                                                                                                         &mut self.price_precon,
                                                                                                                         &mut self.debt_ratio,
-                                                                                                                        &mut self.interest_rate),
+                                                                                                                        &mut self.interest_rate,
+                                                                                                                        &mut self.rent_app,
+                                                                                                                        &mut self.closing_costs),
                                                         Some(Sectors::InbestForProfit) => match self.selected_ibfp{
                                                                                                                Some(IbfpType::Precon) => pages::simulation_page::ibfp_1_precon_sim(
                                                                                                                                                                 ) ,
