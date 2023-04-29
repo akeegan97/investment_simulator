@@ -1,9 +1,9 @@
 
-use chrono::{NaiveDate, DateTime,Local, Datelike};
+use chrono::{NaiveDate};
 use eframe::egui;
 use egui::{Color32, RichText, FontId, Vec2, plot::{PlotPoints,Line, Legend, Plot}};
 use super::product_page::{LISTINGS, PACKAGES};
-
+use crate::pages::ibfl_functions;
 
 
 
@@ -90,11 +90,11 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
         }
     egui::CentralPanel::default().frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx, |ui|{
         ui.heading(RichText::new("Graph").color(Color32::WHITE).font(FontId::proportional(20.0)));
-        let ans: Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])>  = ibfl_precon(years, interest_rate, mort_rate, price_precon, 
+        let ans: Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])>  = ibfl_functions::ibfl_precon(years, interest_rate, mort_rate, price_precon, 
             first_payment, second_payment, third_payment, fourth_payment, fifth_payment, 
             first_payment_percent, second_payment_percent, third_payment_percent, fourth_payment_percent, 
             fifth_payment_percent, service_pkg_price, prop_mgmt, app_rate, expense_withholding, 
-            rent, debt_ratio,rent_app, closing_costs);
+            rent, debt_ratio,rent_app, closing_costs, selected_mgmt);
         let cap_vec: Vec<[f64; 2]> = split_ans(&ans, 0);
         let income_vec: Vec<[f64; 2]> = split_ans(&ans, 1);
         let prop_value_vec: Vec<[f64; 2]> = split_ans(&ans, 2);
@@ -118,10 +118,6 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
             prop_value = 0.0;
         }
         let unrealized_gains:f64 = prop_value - *price_precon;
-
-
-        
-
 
         let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
         let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
@@ -152,94 +148,8 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
     });
 
 }
-fn ibfl_precon(years:&mut f64, _interest_rate:&mut f64, mort_rate:&mut f64, price_precon:&mut f64, first_payment:&mut NaiveDate, second_payment:&mut NaiveDate, third_payment:&mut NaiveDate,
-    fourth_payment:&mut NaiveDate, fifth_payment:&mut NaiveDate, first_payment_percent:&mut f64, second_payment_percent:&mut f64, third_payment_percent:&mut f64, fourth_payment_percent:&mut f64, fifth_payment_percent:&mut f64,
-    service_pkg_price:&mut f64, prop_mgmt: &mut f64,app_rate: &mut f64, expense_withholding:&mut f64, rent:&mut f64, debt_ratio:&mut f64, rent_app:&mut f64, closing_costs:&mut f64)->Vec<([f64;2],[f64;2],[f64;2],[f64;2])>{
-        let y = *years * 12.0;//total months
-        let first_payment_amt:f64 = *price_precon * (*first_payment_percent * 0.01);
-        let second_payment_amt:f64 = *price_precon *(*second_payment_percent * 0.01);
-        let third_payment_amt:f64 = *price_precon *(*third_payment_percent * 0.01);
-        let fourth_payment_amt:f64 = *price_precon *(*fourth_payment_percent * 0.01);
-        let fifth_payment_amt:f64 = *price_precon *(*fifth_payment_percent * 0.01);
-        let first_payment_date:NaiveDate = *first_payment;
-        let second_payment_date:NaiveDate = *second_payment;
-        let third_payment_date:NaiveDate = *third_payment;
-        let fourth_payment_date:NaiveDate = *fourth_payment;
-        let fifth_payment_date:NaiveDate = *fifth_payment;
-        let local:DateTime<Local>= Local::now();
-        let start_months: i32 = local.date_naive().num_days_from_ce();
-        let p_1: i32 = first_payment_date.num_days_from_ce();
-        let p_2: i32 = second_payment_date.num_days_from_ce();
-        let p_3: i32 = third_payment_date.num_days_from_ce();
-        let p_4: i32 = fourth_payment_date.num_days_from_ce();
-        let p_5: i32 = fifth_payment_date.num_days_from_ce();
-        let x1: i32 = (p_1- start_months)/30; // number of months from today until first payment due 
-        let x2: i32 = ((p_2- start_months))/30;//number of months from today until second payment
-        let x3: i32 =((p_3- start_months))/30;
-        let x4: i32 =((p_4- start_months))/30;
-        let x5: i32 =((p_5- start_months))/30;
-        let mut results:Vec<([f64;2],[f64;2],[f64;2],[f64;2])>=Vec::new();
-        let mut x: f64 = 0.0;
-        let mut rent_revenue_updated: f64 = *rent;
-        let mut prop_value: f64 = *price_precon;
-        let service_expense: f64 = *service_pkg_price;
-        let inside_app_rate:f64 = *app_rate / 12.0;//rate divided by 12 since dealing with months not years
-        let mut net_income:f64=0.0;
-        let inside_debt_ratio:f64 = *debt_ratio * 0.01;
-        let inside_expense_withholding:f64 = *expense_withholding * 0.01;
-        let inside_mort_rate:f64 = *mort_rate * 0.01;
-        let inside_rent_app:f64 = *rent_app * 0.01;
-        while x<=y{
-           let mut cap:f64;
-            while x<=x5 as f64{
-                cap = 0.0;
-                if x == x1 as f64{
-                    cap = -first_payment_amt;
-                }
-                if x == x2 as f64{
-                    cap = -second_payment_amt;
-                }
-                if x == x3 as f64{
-                    cap = -third_payment_amt;
-                }
-                if x == x4 as f64{
-                    cap = -fourth_payment_amt;
-                }
-                if x == x5 as f64{
-                    cap = -fifth_payment_amt - *closing_costs;
-                }
-                x+=1.0;
-                results.push(([x,cap],[x,0.0],[x,0.0],[x,0.0]));
-            }
-            cap = 0.0;
-            let mortgage_liability:f64 = *price_precon * (inside_debt_ratio);
-            let mort_payment:f64 = (mortgage_liability * (inside_mort_rate)) / 12.0;
-            let cap_inject:f64;
-            if x == x5 as f64+1.0{
-                cap_inject = *price_precon * (inside_debt_ratio);
-            }else{
-                cap_inject = 0.0;
-            }
-            
-            net_income += (rent_revenue_updated * (1.0 - *prop_mgmt) *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
-            if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
-                rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
-                net_income += rent_revenue_updated * (*prop_mgmt) * inside_expense_withholding + cap_inject - service_expense - mort_payment;
-            }
-            prop_value += prop_value * (inside_app_rate*0.01);
-            results.push(([x,cap],[x,net_income],[x,prop_value],[x,mortgage_liability]));
-            x+=1.0;
-            
-        }
-        
-        return results
 
-        
-
-
-
-}
-pub fn ibfp_1_precon_sim(){
+pub fn _ibfp_1_precon_sim(){
 
 }
 pub fn ibfp_mkt_sim(){
@@ -289,7 +199,7 @@ pub fn format_dollar_amount(value: impl ToString) -> String {
 
     formatted_with_commas
 }
-fn split_ans(results:&Vec<([f64;2],[f64;2],[f64;2],[f64;2])>, position:i64)->Vec<[f64;2]>{
+pub fn split_ans(results:&Vec<([f64;2],[f64;2],[f64;2],[f64;2])>, position:i64)->Vec<[f64;2]>{
     let mut ans:Vec<[f64;2]>=Vec::new();
     if position == 0{
         for(i,_,_,_,) in results{

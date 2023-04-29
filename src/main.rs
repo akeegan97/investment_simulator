@@ -10,6 +10,8 @@ mod pages{
     pub mod main_page;
     pub mod product_page;
     pub mod simulation_page;
+    pub mod ibfl_functions;
+    pub mod ibfp_functions;
 }
 
 
@@ -84,6 +86,10 @@ struct Sim{
     debt_ratio:f64,
     rent_app:f64,
     closing_costs:f64,
+    ibfp_unit_str:String,
+    ibfp_unit_price:f64,
+    occupancy:f64,
+    price_per_night:f64,
 }
 impl Sim{
     fn new(cc:&eframe::CreationContext<'_>)->Self{
@@ -118,6 +124,10 @@ impl Sim{
             debt_ratio:0.0,
             rent_app:0.0,
             closing_costs:0.0,
+            ibfp_unit_str:String::new(),
+            ibfp_unit_price:0.0,
+            occupancy:0.0,
+            price_per_night:0.0,
         }
     }
 }
@@ -185,10 +195,35 @@ impl eframe::App for Sim{
                                                                                                                         &mut self.rent_app,
                                                                                                                         &mut self.closing_costs),
                                                         Some(Sectors::InbestForProfit) => match self.selected_ibfp{
-                                                                                                               Some(IbfpType::Precon) => pages::simulation_page::ibfp_1_precon_sim(
-                                                                                                                                                                ) ,
-                                                                                                               Some(IbfpType::Mkt)=> pages::simulation_page::ibfp_mkt_sim(),
-                                                                                                               Some(IbfpType::Mix)=> pages::simulation_page::ibfp_precon_mkt(),
+                                                                                                               Some(IbfpType::Precon) => pages::ibfp_functions::ibfp_sim_precon(
+                                                                                                                            ctx,
+                                                                                                                            &mut self.years,
+                                                                                                                            &mut self.ibfp_unit_str,
+                                                                                                                            &mut self.ibfp_unit_price,
+                                                                                                                            &mut self.selected_services,
+                                                                                                                            &mut self.service_pkg_price,
+                                                                                                                            &mut self.prop_mgmt,
+                                                                                                                            &mut self.selected_mgmt,
+                                                                                                                            &mut self.mort_rate,
+                                                                                                                            &mut self.first_payment,
+                                                                                                                            &mut self.second_payment,
+                                                                                                                            &mut self.third_payment,
+                                                                                                                            &mut self.fourth_payment,
+                                                                                                                            &mut self.fifth_payment,
+                                                                                                                            &mut self.first_payment_percent,
+                                                                                                                            &mut self.second_payment_percent,
+                                                                                                                            &mut self.third_payment_percent,
+                                                                                                                            &mut self.fourth_payment_percent,
+                                                                                                                            &mut self.fifth_payment_percent,
+                                                                                                                            &mut self.app_rate,
+                                                                                                                            &mut self.occupancy,
+                                                                                                                            &mut self.price_per_night,
+                                                                                                                            &mut self.expense_withholding,
+                                                                                                                            &mut self.debt_ratio,
+                                                                                                                            &mut self.rent_app,
+                                                                                                                            &mut self.closing_costs),
+                                                                                                               Some(IbfpType::Mkt)=> pages::ibfp_functions::ibfp_mkt_sim(),
+                                                                                                               Some(IbfpType::Mix)=> pages::ibfp_functions::ibfp_mix_sim(),
                                                                                                                _ => (),
                                                         }
                                                         Some(Sectors::InbestFund)=> match self.selected_fund{
