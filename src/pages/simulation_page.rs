@@ -149,16 +149,6 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
 
 }
 
-pub fn _ibfp_1_precon_sim(){
-
-}
-pub fn ibfp_mkt_sim(){
-
-}
-pub fn ibfp_precon_mkt(){
-
-}
-
 pub fn fund_core(){
     
 }
