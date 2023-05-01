@@ -103,7 +103,7 @@ impl Sim{
             selected_ibfp:None,
             selected_fund:None,
             years:0.0,
-            mort_rate:5.0,
+            mort_rate:0.0,
             first_payment:NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
             second_payment:NaiveDate::from_ymd_opt(2024, 6, 1).unwrap(),
             third_payment:NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),

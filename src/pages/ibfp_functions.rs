@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, DateTime,Local, Datelike};
 use egui::{Color32, RichText, FontId, Vec2, plot::{PlotPoints,Line, Legend, Plot}};
 use egui_extras;
-use super::{product_page::PACKAGES, ibfl_functions};
+use super::{product_page::PACKAGES};
 use crate::pages::simulation_page::{format_dollar_amount,split_ans};
 const MARGIN:Vec2 = Vec2{x: 7.0,y: 7.0};
 
@@ -212,6 +212,7 @@ pub fn ibfp_precon(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64,
                 if x == x5 as f64{
                     cap = -fifth_payment_amt - *closing_costs;
                 }
+            
                 x+=1.0;
                 results.push(([x,cap],[x,0.0],[x,0.0],[x,0.0]));
             }
@@ -225,13 +226,13 @@ pub fn ibfp_precon(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64,
                 cap_inject = 0.0;
             }
             
-            net_income += (rent_revenue_updated  *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
+            net_income += (rent_revenue_updated*(1.0-*prop_mgmt)  *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
             if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
                 rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
                 net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - service_expense - mort_payment;
             }
             prop_value += prop_value * (inside_app_rate*0.01);
-            results.push(([x,cap],[x,(net_income * (1.0-*prop_mgmt))],[x,prop_value],[x,mortgage_liability]));
+            results.push(([x,cap],[x,net_income],[x,prop_value],[x,mortgage_liability]));
             x+=1.0;
             
         }
@@ -392,6 +393,7 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
     service_pkg_price:&mut f64, prop_mgmt: &mut f64,app_rate: &mut f64, expense_withholding:&mut f64, price_per_night:&mut f64, debt_ratio:&mut f64, rent_app:&mut f64, 
     closing_costs:&mut f64,occupancy:&mut f64,selected_mgmt:&mut bool)->Vec<([f64;2],[f64;2],[f64;2],[f64;2])>{
         let y = *years * 12.0;//total months
+        let mut x:f64 = 1.0;
         let first_payment_amt:f64 = *ibfp_unit_price * (*first_payment_percent * 0.01);
         let second_payment_amt:f64 = *ibfp_unit_price *(*second_payment_percent * 0.01);
         let third_payment_amt:f64 = *ibfp_unit_price *(*third_payment_percent * 0.01);
@@ -415,28 +417,24 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
         let x4: i32 =((p_4- start_months))/30;
         let x5: i32 =((p_5- start_months))/30;
         let mut results:Vec<([f64;2],[f64;2],[f64;2],[f64;2])>=Vec::new();
-        let mut x: f64 = 0.0;
-        let mut rent_revenue_updated: f64 = (*price_per_night) * ((*occupancy * 0.01)*30.42);
-        let mut prop_value: f64 = *ibfp_unit_price;
-        let service_expense: f64 = *service_pkg_price;
-        let inside_app_rate:f64 = *app_rate / 12.0;//rate divided by 12 since dealing with months not years
-        let mut net_income:f64=0.0;
-        let inside_debt_ratio:f64 = *debt_ratio * 0.01;
-        let inside_expense_withholding:f64 = *expense_withholding * 0.01;
-        let inside_mort_rate:f64 = *mort_rate * 0.01;
-        let inside_rent_app:f64 = *rent_app * 0.01;
-        let mut rev:f64;
-        let mut properties:f64 = 1.0;
-        let mut mort_payment:f64 = 0.0;
-        let mut mort_liability:f64 = 0.0;
-        let mut mort_added:f64;
+        let mut ppn: f64 = *price_per_night;
         if *selected_mgmt == true{
             *prop_mgmt = 0.35;
         }else{
             *prop_mgmt = 0.0;
         }
+        //main sim logic
+        let mut mort_liability:f64 = 0.0;
+        let mut net_income:f64 = 0.0;
+        let mut rev: f64;
+        let mut mort_payment:f64;
+        let mut prop_value:f64 = *ibfp_unit_price;
+        let base:f64 = 1.0 + (*app_rate*0.01);
+        let mut additional_unit_cost:f64 = *ibfp_unit_price * base.powf(3.0);
+        let mut properties:f64 = 1.0;
         while x<=y{
-           let mut cap:f64;
+            //first part of the sim while making precon payments
+            let mut cap:f64 = 0.0;
             while x<=x5 as f64{
                 cap = 0.0;
                 if x == x1 as f64{
@@ -457,28 +455,39 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
                 x+=1.0;
                 results.push(([x,cap],[x,0.0],[x,0.0],[x,0.0]));
             }
-            cap = 0.0;
-            let cap_inject:f64;
-            if x == x5 as f64+1.0{
-                cap_inject = *ibfp_unit_price * (inside_debt_ratio);
-                mort_added = *ibfp_unit_price * (inside_debt_ratio);
-            }else{
-                cap_inject = 0.0;
+            additional_unit_cost = additional_unit_cost + ((additional_unit_cost * ((*app_rate *0.01) / 12.0)));
+            //starting after precon is bought
+            //first take mortgage out on property:
+            let mut  cap_inject:f64 = 0.0;
+            let mut first_mort:f64 = 0.0;
+            if x == x5 as f64 +1.0{
+                cap_inject = *ibfp_unit_price * (*debt_ratio * 0.01);
+                first_mort = *ibfp_unit_price * (*debt_ratio * 0.01);
             }
-            rev = (cap_inject+((*price_per_night) * ((*occupancy * 0.01) * 30.41)) * properties) * (1.0 - *prop_mgmt);
-            
-            net_income = net_income + (rev * (inside_expense_withholding) - mort_payment) ;
-            if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
-                rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
-                net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - service_expense - mort_payment;
+            let mut mort_add:f64 = 0.0;
+            let mut add_prop_value:f64 = 0.0;
+            if net_income >= additional_unit_cost * (1.0- *debt_ratio * 0.01){
+                mort_add = additional_unit_cost * (*debt_ratio * 0.01);
+                net_income = net_income - additional_unit_cost * (1.0- *debt_ratio * 0.01);
+                add_prop_value = additional_unit_cost;
+                properties+=1.0;
             }
-           
-            results.push(([x,cap],[x,(net_income * (1.0-*prop_mgmt))+cap_inject],[x,prop_value],[x,mort_liability]));
+            if x%12.0 == 0.0{
+                net_income = net_income - *service_pkg_price;
+                ppn = ppn + ppn*(*rent_app * 0.01);
+            }
+            mort_liability = mort_liability + first_mort + mort_add;
+            mort_payment = (mort_liability * (*mort_rate * 0.01))/12.0;
+            rev = (ppn * (*occupancy * 0.01)*30.41)*(1.0- *prop_mgmt)*(1.0- *expense_withholding*0.01) - mort_payment;
+            net_income = net_income + rev + cap_inject;
+            prop_value = prop_value + (prop_value * ((*app_rate * 0.01)/12.0)) + add_prop_value;
+            results.push(([x,cap],[x,net_income ],[x,prop_value],[x,mort_liability]));
             x+=1.0;
-            
+            println!("{}",properties);
+            println!("{}",additional_unit_cost);
+            println!("{}",net_income);
         }
-        
-        
+
         return results
 }
 
