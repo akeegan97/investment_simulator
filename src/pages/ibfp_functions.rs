@@ -425,8 +425,11 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
         let inside_expense_withholding:f64 = *expense_withholding * 0.01;
         let inside_mort_rate:f64 = *mort_rate * 0.01;
         let inside_rent_app:f64 = *rent_app * 0.01;
-        let mut property_price:f64 = *ibfp_unit_price;
+        let mut rev:f64;
         let mut properties:f64 = 1.0;
+        let mut mort_payment:f64 = 0.0;
+        let mut mort_liability:f64 = 0.0;
+        let mut mort_added:f64;
         if *selected_mgmt == true{
             *prop_mgmt = 0.35;
         }else{
@@ -455,39 +458,24 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
                 results.push(([x,cap],[x,0.0],[x,0.0],[x,0.0]));
             }
             cap = 0.0;
-            let mut mortgage_liability:f64 = *ibfp_unit_price * (inside_debt_ratio);
-            let mort_payment:f64 = (mortgage_liability * (inside_mort_rate)) / 12.0;
             let cap_inject:f64;
             if x == x5 as f64+1.0{
                 cap_inject = *ibfp_unit_price * (inside_debt_ratio);
+                mort_added = *ibfp_unit_price * (inside_debt_ratio);
             }else{
                 cap_inject = 0.0;
             }
+            rev = (cap_inject+((*price_per_night) * ((*occupancy * 0.01) * 30.41)) * properties) * (1.0 - *prop_mgmt);
             
-            net_income += (rent_revenue_updated  *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
+            net_income = net_income + (rev * (inside_expense_withholding) - mort_payment) ;
             if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
                 rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
-                net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - (service_expense * properties) - mort_payment;
+                net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - service_expense - mort_payment;
             }
-            let mut  added_port_value:f64 = 0.0;
-            let mut added_mort_liab:f64 = 0.0;
-            if net_income > property_price * (1.0-inside_debt_ratio){
-                added_port_value = property_price;
-                added_mort_liab = property_price * (inside_debt_ratio);
-                properties+=1.0;
-                net_income=net_income - property_price * (1.0-inside_debt_ratio)
-
-            }
-            prop_value += prop_value * (inside_app_rate*0.01) + added_port_value;
-            property_price+=property_price*(inside_app_rate*0.01);
-            mortgage_liability = mortgage_liability + added_mort_liab;
-
-
-
-            results.push(([x,cap],[x,(net_income * (1.0-*prop_mgmt))],[x,prop_value],[x,mortgage_liability]));
+           
+            results.push(([x,cap],[x,(net_income * (1.0-*prop_mgmt))+cap_inject],[x,prop_value],[x,mort_liability]));
             x+=1.0;
-            println!("properties: {},\n mortgage_liab:{}\n month: {}",properties, mortgage_liability, x);
-            //errors with mortgage liability, capital injection and property purchasing
+            
         }
         
         
