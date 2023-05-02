@@ -483,9 +483,6 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
             prop_value = prop_value + (prop_value * ((*app_rate * 0.01)/12.0)) + add_prop_value;
             results.push(([x,cap],[x,net_income ],[x,prop_value],[x,mort_liability]));
             x+=1.0;
-            println!("{}",properties);
-            println!("{}",additional_unit_cost);
-            println!("{}",net_income);
         }
 
         return results
