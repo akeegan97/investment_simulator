@@ -29,7 +29,7 @@ pub fn ibfl_precon(years:&mut f64, _interest_rate:&mut f64, mort_rate:&mut f64, 
         let x5: i32 =((p_5- start_months))/30;
         let mut results:Vec<([f64;2],[f64;2],[f64;2],[f64;2])>=Vec::new();
         let mut x: f64 = 0.0;
-        let mut rent_revenue_updated: f64 = *rent;
+        let mut rent: f64 = *rent;
         let mut prop_value: f64 = *price_precon;
         let service_expense: f64 = *service_pkg_price;
         let inside_app_rate:f64 = *app_rate / 12.0;//rate divided by 12 since dealing with months not years
@@ -74,14 +74,13 @@ pub fn ibfl_precon(years:&mut f64, _interest_rate:&mut f64, mort_rate:&mut f64, 
             }else{
                 cap_inject = 0.0;
             }
-            
-            net_income += (rent_revenue_updated *(1.0-*expense_withholding*0.01)+cap_inject) - (mort_payment);
             if x%12.0 == 0.0{//checks if it is a year to subtract yearly service package cost + increase property value by app_rate and rent by rent_app
-                rent_revenue_updated+=rent_revenue_updated * inside_rent_app;//increasing the rent once per year
-                net_income += rent_revenue_updated * inside_expense_withholding + cap_inject - service_expense - mort_payment;
+                rent+=rent * inside_rent_app;//increasing the rent once per year
+                net_income += rent * inside_expense_withholding + cap_inject - service_expense - mort_payment;
             }
             prop_value += prop_value * (inside_app_rate*0.01);
-            results.push(([x,cap],[x,(net_income * (1.0 - *prop_mgmt))],[x,prop_value],[x,mortgage_liability]));
+            net_income += (rent *(1.0-*expense_withholding*0.01)) * (1.0 - *prop_mgmt) + cap_inject - (mort_payment);
+            results.push(([x,cap],[x,net_income],[x,prop_value],[x,mortgage_liability]));
             x+=1.0;
             
         }

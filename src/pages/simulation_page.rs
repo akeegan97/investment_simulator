@@ -117,7 +117,7 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
         }else{
             prop_value = 0.0;
         }
-        let unrealized_gains:f64 = prop_value - *price_precon;
+        let unrealized_gains:f64 = prop_value - mortgage_liab + income_generated;
 
         let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
         let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
@@ -139,7 +139,7 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
             ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
-            ui.label(RichText::new("Unrealized Gains").color(Color32::BLACK).font(FontId::proportional(20.0)));
+            ui.label(RichText::new("Holding Net Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
         });
         

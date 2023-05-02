@@ -47,7 +47,7 @@ pub fn inbest_for_life(ctx:&egui::Context, selected_ibfl: &mut Option<LISTINGS>,
                 .show(ctx,|ui|{
                     ui.columns(5, |col|{
                         col[0].add(egui::Label::new(RichText::new("Listing #1 Image").color(Color32::WHITE).font(FontId::proportional(18.0))));
-                        col[0].add(egui::Label::new(RichText::new("Price of Listing").color(Color32::WHITE).font(FontId::proportional(18.0))));
+                        col[0].add(egui::Label::new(RichText::new("1M").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         col[0].add(egui::Label::new(RichText::new("Listing Information").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         let l_1 = *selected_ibfl == Some(LISTINGS::First);
                         let first=  col[0].add(egui::SelectableLabel::new(l_1,RichText::new( "Select").color(Color32::WHITE).font(FontId::proportional(18.0))));
@@ -57,7 +57,7 @@ pub fn inbest_for_life(ctx:&egui::Context, selected_ibfl: &mut Option<LISTINGS>,
                             *selected_ibfl = None;
                         }
                         col[1].add(egui::Label::new(RichText::new("Listing #2 Image").color(Color32::WHITE).font(FontId::proportional(18.0))));
-                        col[1].add(egui::Label::new(RichText::new("Price of Listing").color(Color32::WHITE).font(FontId::proportional(18.0))));
+                        col[1].add(egui::Label::new(RichText::new("1.5M").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         col[1].add(egui::Label::new(RichText::new("Listing Information").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         let l_2 = *selected_ibfl == Some(LISTINGS::Second);
                         let second=  col[1].add(egui::SelectableLabel::new(l_2,RichText::new( "Select").color(Color32::WHITE).font(FontId::proportional(18.0))));
@@ -67,7 +67,7 @@ pub fn inbest_for_life(ctx:&egui::Context, selected_ibfl: &mut Option<LISTINGS>,
                             *selected_ibfl = None;
                         }
                         col[2].add(egui::Label::new(RichText::new("Listing #3 Image").color(Color32::WHITE).font(FontId::proportional(18.0))));
-                        col[2].add(egui::Label::new(RichText::new("Price of Listing").color(Color32::WHITE).font(FontId::proportional(18.0))));
+                        col[2].add(egui::Label::new(RichText::new("2M").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         col[2].add(egui::Label::new(RichText::new("Listing Information").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         let l_3 = *selected_ibfl == Some(LISTINGS::Third);
                         let third=  col[2].add(egui::SelectableLabel::new(l_3,RichText::new( "Select").color(Color32::WHITE).font(FontId::proportional(18.0))));
@@ -77,7 +77,7 @@ pub fn inbest_for_life(ctx:&egui::Context, selected_ibfl: &mut Option<LISTINGS>,
                             *selected_ibfl = None;
                         }
                         col[3].add(egui::Label::new(RichText::new("Listing #4 Image").color(Color32::WHITE).font(FontId::proportional(18.0))));
-                        col[3].add(egui::Label::new(RichText::new("Price of Listing").color(Color32::WHITE).font(FontId::proportional(18.0))));
+                        col[3].add(egui::Label::new(RichText::new("2.5M").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         col[3].add(egui::Label::new(RichText::new("Listing Information").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         let l_4 = *selected_ibfl == Some(LISTINGS::Fourth);
                         let fourth=  col[3].add(egui::SelectableLabel::new(l_4,RichText::new( "Select").color(Color32::WHITE).font(FontId::proportional(18.0))));
@@ -87,7 +87,7 @@ pub fn inbest_for_life(ctx:&egui::Context, selected_ibfl: &mut Option<LISTINGS>,
                             *selected_ibfl = None;
                         }
                         col[4].add(egui::Label::new(RichText::new("Listing #5 Image").color(Color32::WHITE).font(FontId::proportional(18.0))));
-                        col[4].add(egui::Label::new(RichText::new("Price of Listing").color(Color32::WHITE).font(FontId::proportional(18.0))));
+                        col[4].add(egui::Label::new(RichText::new("3M").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         col[4].add(egui::Label::new(RichText::new("Listing Information").color(Color32::WHITE).font(FontId::proportional(18.0))));
                         let l_5 = *selected_ibfl == Some(LISTINGS::Fifth);
                         let fifth=  col[4].add(egui::SelectableLabel::new(l_5,RichText::new( "Select").color(Color32::WHITE).font(FontId::proportional(18.0))));

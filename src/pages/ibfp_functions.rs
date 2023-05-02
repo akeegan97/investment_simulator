@@ -121,7 +121,7 @@ pub fn ibfp_sim_precon(ctx:&egui::Context,
         }else{
             prop_value = 0.0;
         }
-        let unrealized_gains:f64 = prop_value - *ibfp_unit_price;
+        let unrealized_gains:f64 = prop_value - mortgage_liab + income_generated;
 
         let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
         let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
@@ -144,7 +144,7 @@ pub fn ibfp_sim_precon(ctx:&egui::Context,
             ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
-            ui.label(RichText::new("Unrealized Gains").color(Color32::BLACK).font(FontId::proportional(20.0)));
+            ui.label(RichText::new("Holding Net Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
         });
     });
@@ -355,7 +355,7 @@ pub fn ibfp_sim_mix(ctx:&egui::Context,
     }else{
         prop_value = 0.0;
     }
-    let unrealized_gains:f64 = prop_value - *ibfp_unit_price;
+    let unrealized_gains:f64 = prop_value - mortgage_liab + income_generated;
 
     let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
     let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
@@ -378,7 +378,7 @@ pub fn ibfp_sim_mix(ctx:&egui::Context,
         ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
-        ui.label(RichText::new("Unrealized Gains").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new("Holding Net Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
     });
 });
@@ -429,8 +429,7 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
         let mut rev: f64;
         let mut mort_payment:f64;
         let mut prop_value:f64 = *ibfp_unit_price;
-        let base:f64 = 1.0 + (*app_rate*0.01);
-        let mut additional_unit_cost:f64 = *ibfp_unit_price * base.powf(3.0);
+        let mut additional_unit_cost:f64 = *ibfp_unit_price + *closing_costs;
         let mut properties:f64 = 1.0;
         while x<=y{
             //first part of the sim while making precon payments
@@ -466,19 +465,19 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
             }
             let mut mort_add:f64 = 0.0;
             let mut add_prop_value:f64 = 0.0;
-            if net_income >= additional_unit_cost * (1.0- *debt_ratio * 0.01) + *closing_costs{
+            if net_income >= additional_unit_cost * (1.0- *debt_ratio * 0.01) + *closing_costs + ((additional_unit_cost * (*debt_ratio * 0.01)* *mort_rate)/12.0){
                 mort_add = additional_unit_cost * (*debt_ratio * 0.01);
                 net_income = net_income - additional_unit_cost * (1.0- *debt_ratio * 0.01);
                 add_prop_value = additional_unit_cost;
                 properties+=1.0;
             }
             if x%12.0 == 0.0{
-                net_income = net_income - *service_pkg_price;
+                net_income = net_income - (*service_pkg_price * properties);
                 ppn = ppn + ppn*(*rent_app * 0.01);
             }
             mort_liability = mort_liability + first_mort + mort_add;
             mort_payment = (mort_liability * (*mort_rate * 0.01))/12.0;
-            rev = (ppn * (*occupancy * 0.01)*30.41)*(1.0- *prop_mgmt)*(1.0- *expense_withholding*0.01) - mort_payment;
+            rev = ((ppn * (*occupancy * 0.01)*30.41)*(1.0- *prop_mgmt)*(1.0- *expense_withholding*0.01) - mort_payment)*properties;
             net_income = net_income + rev + cap_inject;
             prop_value = prop_value + (prop_value * ((*app_rate * 0.01)/12.0)) + add_prop_value;
             results.push(([x,cap],[x,net_income ],[x,prop_value],[x,mort_liability]));
@@ -507,6 +506,7 @@ pub fn ibfp_mkt_sim(ctx:&egui::Context,
                         rent_app:&mut f64,
                         closing_costs:&mut f64,
                         ibfp_investment_amount: &mut f64,
+                        ibfp_investment_amount_str: &mut String,
                         ){
     egui::TopBottomPanel::top("Heading").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
         ui.columns(3,|col|{
@@ -520,8 +520,8 @@ pub fn ibfp_mkt_sim(ctx:&egui::Context,
         if let Ok(price) = ibfp_unit_str.parse::<f64>(){
             *ibfp_unit_price = price;
         }
-        ui.add(egui::TextEdit::singleline(ibfp_investment_amount_str).hint_text(RichText::new("Enter Price of Unit")));
-        if let Ok(initial) = ibfp_investment_amount.parse::<f64>(){
+        ui.add(egui::TextEdit::singleline(ibfp_investment_amount_str).hint_text(RichText::new("Enter Investment")));
+        if let Ok(initial) = ibfp_investment_amount_str.parse::<f64>(){
             *ibfp_investment_amount = initial;
         }
         ui.label(RichText::new(format!("Price of Unit: {}",format_dollar_amount(*ibfp_unit_price))).color(Color32::WHITE).font(FontId::proportional(18.0)));
@@ -546,14 +546,18 @@ pub fn ibfp_mkt_sim(ctx:&egui::Context,
     if *selected_mgmt == true{
         *prop_mgmt = 0.35;
     }
-    let ans: Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])> = ibfp_mix(years, mort_rate, ibfp_unit_price, first_payment, second_payment, 
-        third_payment, fourth_payment, fifth_payment, first_payment_percent, second_payment_percent, third_payment_percent, 
-        fourth_payment_percent, fifth_payment_percent, service_pkg_price, prop_mgmt, app_rate, expense_withholding, price_per_night, 
-        debt_ratio, rent_app, closing_costs,occupancy,selected_mgmt);
-    let cap_vec:Vec<[f64;2]> = split_ans(&ans, 0);
+    let ans: Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])> = ibfp_mkt(years, mort_rate, ibfp_unit_price, service_pkg_price, prop_mgmt, app_rate, expense_withholding, price_per_night, 
+        debt_ratio, rent_app, closing_costs,occupancy,selected_mgmt,ibfp_investment_amount);
+    let properties_vec:Vec<[f64;2]> = split_ans(&ans, 0);
     let income_vec:Vec<[f64;2]> = split_ans(&ans, 1);
     let prop_value_vec: Vec<[f64; 2]> = split_ans(&ans, 2);
     let mort: Vec<[f64; 2]> = split_ans(&ans, 3);
+    let properties:f64;
+    if let Some(props) = properties_vec.last(){
+        properties = props[1];
+    }else{
+        properties = 0.0;
+    }
     let income_generated:f64;
     if let Some(total_income) = income_vec.last(){
         income_generated = total_income[1];
@@ -572,9 +576,9 @@ pub fn ibfp_mkt_sim(ctx:&egui::Context,
     }else{
         prop_value = 0.0;
     }
-    let unrealized_gains:f64 = prop_value - *ibfp_unit_price;
+    let unrealized_gains:f64 = prop_value - mortgage_liab + income_generated;
 
-    let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
+    let cap_line:Line = Line::new(PlotPoints::new(properties_vec)).color(Color32::LIGHT_RED).name("Properties");
     let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
     let value_line:Line = Line::new(PlotPoints::new(prop_value_vec)).color(Color32::WHITE).name("Property Value");
     let mort_line:Line = Line::new(PlotPoints::new(mort)).color(Color32::RED).name("Loan Liability");
@@ -595,14 +599,67 @@ pub fn ibfp_mkt_sim(ctx:&egui::Context,
         ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
-        ui.label(RichText::new("Unrealized Gains").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new("Holding Net Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
         ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
     });
+    ui.label(RichText::new("Properties").color(Color32::BLACK).font(FontId::proportional(20.0)));
+    ui.label(RichText::new(properties.to_string()).color(Color32::BLACK).font(FontId::proportional(20.0)));
 });
 
 
 }
 
-pub fn _ibfp_mkt(){
+pub fn ibfp_mkt(years:&mut f64,mort_rate:&mut f64,ibfp_unit_price:&mut f64, service_pkg_price: &mut f64, prop_mgmt: &mut f64, app_rate: &mut f64, expense_withholding:&mut f64, price_per_night:&mut f64,
+debt_ratio:&mut f64, rent_app:&mut f64, closing_costs:&mut f64, occupancy:&mut f64, selected_mgmt:&mut bool,ibfp_investment_amount: &mut f64)->Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])>{
+    let y: f64 = *years * 12.0;//total months
+    let mut x:f64 = 1.0;
+    let mut results:Vec<([f64;2],[f64;2],[f64;2],[f64;2])>=Vec::new();
+    let mut ppn: f64 = *price_per_night;
+    if *selected_mgmt == true{
+        *prop_mgmt = 0.35;
+    }else{
+        *prop_mgmt = 0.0;
+    }
+    //main sim logic
+    let mut mort_liability:f64 = 0.0;
+    let mut net_income:f64 = 0.0;
+    let mut rev: f64;
+    let mut mort_payment:f64;
+    let mut mkt_unit:f64 = *ibfp_unit_price;
+    let mut properties:f64 = (*ibfp_investment_amount / (*ibfp_unit_price+*closing_costs)).floor(); // whole number ie 1M investment / 450K unit price = 2
+    let excess_cap:f64 = *ibfp_investment_amount % (*ibfp_unit_price + *closing_costs);//remainder after buying first units ie 1M investment / 450K unit price = 100K
+    let mut prop_value:f64 = properties * *ibfp_unit_price;
+    while x<=y{
+        //initializing the interior vars to 0 for each loop;
+        let mut mort_add:f64 = 0.0;
+        let mut add_prop_value:f64 = 0.0;
+        //growing unit price monthly based on the appreciation rate/12;
+        mkt_unit = mkt_unit + ((mkt_unit * ((*app_rate *0.01) / 12.0)));
+        let mut initial_mort: f64 = 0.0;
+        let mut cap_inject:f64 = 0.0;
+        if x == 1.0{
+            initial_mort = properties * (*debt_ratio * 0.01);
+            cap_inject = properties * (*debt_ratio * 0.01) + excess_cap;
+        }
+        if net_income >= (mkt_unit * (1.0- *debt_ratio * 0.01) + *closing_costs) + ((mkt_unit * (*debt_ratio * 0.01)* *mort_rate)/12.0){//net income is greater than out of pocket cash + closing costs + first mortgage payment
+            mort_add = mkt_unit * (*debt_ratio * 0.01);
+            net_income = net_income - mkt_unit * (1.0- *debt_ratio * 0.01);
+            add_prop_value = mkt_unit;
+            properties+=1.0;
+        }
+        if x%12.0 == 0.0{
+            net_income = net_income - (*service_pkg_price * properties);
+            ppn = ppn + ppn*(*rent_app * 0.01);
+        }
+        mort_liability = mort_liability + mort_add + initial_mort;
+        mort_payment = (mort_liability * (*mort_rate * 0.01))/12.0;
+        rev = ((ppn * (*occupancy * 0.01)*30.41)*(1.0- *prop_mgmt)*(1.0- *expense_withholding*0.01) - mort_payment)*properties;
+        net_income = net_income + rev + cap_inject;
+        prop_value = prop_value + (prop_value * ((*app_rate * 0.01)/12.0)) + add_prop_value;
+        results.push(([x,properties],[x,net_income ],[x,prop_value],[x,mort_liability]));
+        x+=1.0;
+    }
+
+    return results
 
 }

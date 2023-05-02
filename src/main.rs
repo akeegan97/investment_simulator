@@ -90,6 +90,8 @@ struct Sim{
     ibfp_unit_price:f64,
     occupancy:f64,
     price_per_night:f64,
+    ibfp_investment_amount:f64,
+    ibfp_investment_amount_str:String
 }
 impl Sim{
     fn new(cc:&eframe::CreationContext<'_>)->Self{
@@ -128,6 +130,8 @@ impl Sim{
             ibfp_unit_price:0.0,
             occupancy:0.0,
             price_per_night:0.0,
+            ibfp_investment_amount:0.0,
+            ibfp_investment_amount_str:String::new(),
         }
     }
 }
@@ -222,7 +226,24 @@ impl eframe::App for Sim{
                                                                                                                             &mut self.debt_ratio,
                                                                                                                             &mut self.rent_app,
                                                                                                                             &mut self.closing_costs),
-                                                                                                               Some(IbfpType::Mkt)=> pages::ibfp_functions::ibfp_mkt_sim(),
+                                                                                                               Some(IbfpType::Mkt)=> pages::ibfp_functions::ibfp_mkt_sim(ctx,
+                                                                                                                            &mut self.years,
+                                                                                                                            &mut self.ibfp_unit_str,
+                                                                                                                            &mut self.ibfp_unit_price,
+                                                                                                                            &mut self.selected_services,
+                                                                                                                            &mut self.service_pkg_price,
+                                                                                                                            &mut self.prop_mgmt,
+                                                                                                                            &mut self.selected_mgmt,
+                                                                                                                            &mut self.mort_rate,
+                                                                                                                            &mut self.app_rate,
+                                                                                                                            &mut self.occupancy,
+                                                                                                                            &mut self.price_per_night,
+                                                                                                                            &mut self.expense_withholding,
+                                                                                                                            &mut self.debt_ratio,
+                                                                                                                            &mut self.rent_app,
+                                                                                                                            &mut self.closing_costs,
+                                                                                                                            &mut self.ibfp_investment_amount,
+                                                                                                                            &mut self.ibfp_investment_amount_str),
                                                                                                                Some(IbfpType::Mix)=> pages::ibfp_functions::ibfp_sim_mix(
                                                                                                                             ctx,
                                                                                                                             &mut self.years,
