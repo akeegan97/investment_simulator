@@ -466,7 +466,7 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
             }
             let mut mort_add:f64 = 0.0;
             let mut add_prop_value:f64 = 0.0;
-            if net_income >= additional_unit_cost * (1.0- *debt_ratio * 0.01){
+            if net_income >= additional_unit_cost * (1.0- *debt_ratio * 0.01) + *closing_costs{
                 mort_add = additional_unit_cost * (*debt_ratio * 0.01);
                 net_income = net_income - additional_unit_cost * (1.0- *debt_ratio * 0.01);
                 add_prop_value = additional_unit_cost;
@@ -490,7 +490,116 @@ pub fn ibfp_mix(years:&mut f64, mort_rate:&mut f64, ibfp_unit_price:&mut f64, fi
 
 
 
-pub fn ibfp_mkt_sim(){
+pub fn ibfp_mkt_sim(ctx:&egui::Context,
+                        years:&mut f64,
+                        ibfp_unit_str:&mut String,
+                        ibfp_unit_price:&mut f64,
+                        selected_services:&mut Option<PACKAGES>,
+                        service_pkg_price: &mut f64,
+                        prop_mgmt: &mut f64,
+                        selected_mgmt:&mut bool, 
+                        mort_rate:&mut f64, 
+                        app_rate:&mut f64,
+                        occupancy:&mut f64,
+                        price_per_night:&mut f64,
+                        expense_withholding:&mut f64,
+                        debt_ratio:&mut f64,
+                        rent_app:&mut f64,
+                        closing_costs:&mut f64,
+                        ibfp_investment_amount: &mut f64,
+                        ){
+    egui::TopBottomPanel::top("Heading").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
+        ui.columns(3,|col|{
+            col[1].add(egui::Label::new(RichText::new("FINANZ BUTIK SIMULATION InBest For Profit").color(Color32::WHITE).font(FontId::proportional(24.0))));
+        });
+    });
+    egui::SidePanel::left("Parameter Panel").frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx,|ui|{
+        ui.add(egui::Label::new(RichText::new("Parameters").color(Color32::WHITE).font(FontId::proportional(18.0))));
+        ui.separator();
+        ui.add(egui::TextEdit::singleline(ibfp_unit_str).hint_text(RichText::new("Enter Price of Unit")));
+        if let Ok(price) = ibfp_unit_str.parse::<f64>(){
+            *ibfp_unit_price = price;
+        }
+        ui.add(egui::TextEdit::singleline(ibfp_investment_amount_str).hint_text(RichText::new("Enter Price of Unit")));
+        if let Ok(initial) = ibfp_investment_amount.parse::<f64>(){
+            *ibfp_investment_amount = initial;
+        }
+        ui.label(RichText::new(format!("Price of Unit: {}",format_dollar_amount(*ibfp_unit_price))).color(Color32::WHITE).font(FontId::proportional(18.0)));
+        ui.label(RichText::new(format!("Investment Amount: {}", format_dollar_amount(*ibfp_investment_amount))).color(Color32::WHITE).font(FontId::proportional(18.0)));
+        ui.add(egui::Slider::new(years,0.0..=15.0).text(RichText::new("Years").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(0));
+        ui.add(egui::Slider::new(mort_rate,0.0..=10.0).text(RichText::new("Mortgage Rate").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(app_rate,0.0..=10.0).text(RichText::new("Appreciation Rate").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(expense_withholding,0.0..=30.0).text(RichText::new("Expense Withholding").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(price_per_night,120.0..=500.0).text(RichText::new("Price Per Night").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(occupancy,25.0..=99.0).text(RichText::new("Yearly Occupancy").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(debt_ratio,0.0..=100.0).text(RichText::new("Leveraged Ratio").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(rent_app,0.0..=10.0).text(RichText::new("Price Per Night Increase").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(1));
+        ui.add(egui::Slider::new(closing_costs, 0.0..=100_000.0).text(RichText::new("Closing Costs").color(Color32::WHITE)).clamp_to_range(false).fixed_decimals(0));
+        
+    });
+    match *selected_services{
+        Some(PACKAGES::High)=> *service_pkg_price = 10_000.0,
+        Some(PACKAGES::Med) => *service_pkg_price = 7_000.0,
+        Some(PACKAGES::Low) => *service_pkg_price = 5_000.0,
+        None => *service_pkg_price = 0.0,
+    }
+    if *selected_mgmt == true{
+        *prop_mgmt = 0.35;
+    }
+    let ans: Vec<([f64; 2], [f64; 2], [f64; 2], [f64; 2])> = ibfp_mix(years, mort_rate, ibfp_unit_price, first_payment, second_payment, 
+        third_payment, fourth_payment, fifth_payment, first_payment_percent, second_payment_percent, third_payment_percent, 
+        fourth_payment_percent, fifth_payment_percent, service_pkg_price, prop_mgmt, app_rate, expense_withholding, price_per_night, 
+        debt_ratio, rent_app, closing_costs,occupancy,selected_mgmt);
+    let cap_vec:Vec<[f64;2]> = split_ans(&ans, 0);
+    let income_vec:Vec<[f64;2]> = split_ans(&ans, 1);
+    let prop_value_vec: Vec<[f64; 2]> = split_ans(&ans, 2);
+    let mort: Vec<[f64; 2]> = split_ans(&ans, 3);
+    let income_generated:f64;
+    if let Some(total_income) = income_vec.last(){
+        income_generated = total_income[1];
+    }else{
+        income_generated = 0.0;
+    }
+    let mortgage_liab:f64;
+    if let Some(mort) = mort.last(){
+        mortgage_liab = mort[1];
+    }else{
+        mortgage_liab = 0.0;
+    }
+    let prop_value:f64;
+    if let Some(value) = prop_value_vec.last(){
+        prop_value = value[1];
+    }else{
+        prop_value = 0.0;
+    }
+    let unrealized_gains:f64 = prop_value - *ibfp_unit_price;
+
+    let cap_line:Line = Line::new(PlotPoints::new(cap_vec)).color(Color32::LIGHT_RED).name("Capital Requirements");
+    let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
+    let value_line:Line = Line::new(PlotPoints::new(prop_value_vec)).color(Color32::WHITE).name("Property Value");
+    let mort_line:Line = Line::new(PlotPoints::new(mort)).color(Color32::RED).name("Loan Liability");
+    egui::CentralPanel::default().frame(egui::Frame::default().fill(Color32::LIGHT_BLUE).inner_margin(MARGIN)).show(ctx, |ui|{
+        ui.heading(RichText::new("Graph").color(Color32::WHITE).font(FontId::proportional(20.0)));
+    Plot::new("Graph")
+        .view_aspect(4.0)
+        .auto_bounds_y()
+        .include_y(0.0)
+        .legend(Legend::default().position(egui::plot::Corner::LeftTop))
+        .show(ui, |p_ui: &mut egui::plot::PlotUi|{p_ui.line(cap_line);p_ui.line(income_line);p_ui.line(value_line);p_ui.line(mort_line);});
+
+    ui.heading(RichText::new("Results").color(Color32::WHITE).font(FontId::proportional(20.0)));
+    ui.horizontal(|ui|{
+        ui.label(RichText::new("Generated Income").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new(format_dollar_amount(income_generated)).color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new("Mortgage Liability").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new("Unrealized Gains").color(Color32::BLACK).font(FontId::proportional(20.0)));
+        ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
+    });
+});
+
 
 }
 
