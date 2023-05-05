@@ -4,8 +4,8 @@ use eframe::egui;
 use egui::{Color32, RichText, FontId, Vec2, plot::{PlotPoints,Line, Legend, Plot}};
 use super::product_page::{LISTINGS, PACKAGES};
 use crate::pages::ibfl_functions;
-
-
+use std::{fs::File, path::{PathBuf, Display}};
+use csv::Writer;
 
 pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LISTINGS>,selected_services:&mut Option<PACKAGES>, mort_rate:&mut f64, first_payment:&mut NaiveDate, 
     second_payment:&mut NaiveDate,third_payment:&mut NaiveDate, fourth_payment:&mut NaiveDate, fifth_payment:&mut NaiveDate, first_payment_percent:&mut f64, second_payment_percent:&mut f64,
@@ -78,6 +78,7 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
         });
         ui.add(egui::Slider::new(fifth_payment_percent, 0.0..=(100.0-*first_payment_percent - *second_payment_percent - *third_payment_percent - *fourth_payment_percent))
         .clamp_to_range(false).suffix(" %").max_decimals(0));
+        
     });
         match *selected_services{
             Some(PACKAGES::High)=> *service_pkg_price = 10_000.0,
@@ -123,6 +124,8 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
         let income_line:Line = Line::new(PlotPoints::new(income_vec)).color(Color32::LIGHT_GREEN).name("Income ");
         let value_line:Line = Line::new(PlotPoints::new(prop_value_vec)).color(Color32::WHITE).name("Property Value");
         let mort_line:Line = Line::new(PlotPoints::new(mort_vec)).color(Color32::RED).name("Loan Liability");
+        
+        
 
         Plot::new("Graph")
             .view_aspect(4.0)
@@ -136,15 +139,15 @@ pub fn ibfl_sim(ctx:&egui::Context,years:&mut f64,selected_ibfl:&mut Option<LIST
             ui.label(RichText::new("Generated Income").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(income_generated)).color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new("Mortgage Liability").color(Color32::BLACK).font(FontId::proportional(20.0)));
-            ui.label(RichText::new(format_dollar_amount(mortgage_liab)).color(Color32::BLACK).font(FontId::proportional(20.0)));
+            ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new("Property Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(prop_value)).color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new("Holding Net Value").color(Color32::BLACK).font(FontId::proportional(20.0)));
             ui.label(RichText::new(format_dollar_amount(unrealized_gains)).color(Color32::BLACK).font(FontId::proportional(20.0)));
         });
-        
-
-
+        let download = ui.add(egui::Button::new(RichText::new("Download to CSV File Results").font(FontId::proportional(18.0))));
+        if download.clicked(){
+            write_csv_ibfl(ans)}
     });
 
 }
@@ -166,7 +169,7 @@ pub fn format_dollar_amount(value: impl ToString) -> String {
     let value_str = value.to_string();
     let value_f64 = value_str.parse::<f64>().unwrap_or_default();
 
-    let formatted = format!("{:.2}", value_f64);
+    let formatted = format!("{:.2}", value_f64.abs());
     let parts: Vec<&str> = formatted.split('.').collect();
 
     let int_part = parts[0].chars().rev().collect::<String>();
@@ -185,7 +188,8 @@ pub fn format_dollar_amount(value: impl ToString) -> String {
     formatted_with_commas = formatted_with_commas.chars().rev().collect();
     formatted_with_commas.push('.');
     formatted_with_commas.push_str(&parts[1]);
-    formatted_with_commas.insert(0, '$');
+    let prefix = if value_f64 <0.0{"-$"} else {"$"};
+    formatted_with_commas.insert_str(0, prefix);
 
     formatted_with_commas
 }
@@ -217,4 +221,82 @@ pub fn split_ans(results:&Vec<([f64;2],[f64;2],[f64;2],[f64;2])>, position:i64)-
         }
     }
     return ans
+}
+
+fn write_csv_ibfl(results:Vec<([f64;2],[f64;2],[f64;2],[f64;2])>){
+    let mut cap_expense:Vec<[f64;2]> = Vec::new();
+    for(i,_,_,_) in &results{
+        cap_expense.push(*i);
+    }
+    let mut income_vec:Vec<[f64;2]> = Vec::new();
+    for(_,i,_,_)in &results{
+        income_vec.push(*i);
+    }
+    let mut port_gross_vec:Vec<[f64;2]> = Vec::new();
+    for(_,_,i,_) in &results{
+        port_gross_vec.push(*i);
+    }
+    let mut mort_vec:Vec<[f64;2]> = Vec::new();
+    for(_,_,_,i) in &results{
+        mort_vec.push(*i);
+    }
+    let cap_exp_vec:Vec<String> = cap_expense.iter()
+        .map(|&[_,i]| format_dollar_amount(i))
+        .collect();
+    let income_earned:Vec<String> = income_vec.iter()
+        .map(|&[_,i]| format_dollar_amount(i))
+        .collect();
+    let income_earned_f:Vec<f64> = income_vec.iter()
+        .map(|&[_,i]|i)
+        .collect();
+    let portflio_value:Vec<String> = port_gross_vec.iter()
+        .map(|&[_,i]| format_dollar_amount(i))
+        .collect();
+    let portflio_value_f:Vec<f64> = port_gross_vec.iter()
+        .map(|&[_,i]| i)
+        .collect();
+    let mort_liab_f:Vec<f64> = mort_vec.iter()
+        .map(|&[_,i]| i)
+        .collect();
+    let mort_liab:Vec<String> = mort_vec.iter()
+        .map(|&[_,i]| format_dollar_amount(i))
+        .collect();
+    let mut net_port_value:Vec<f64> = portflio_value_f.iter()
+        .zip(&mort_liab_f)
+        .map(|(&i, &j)| i - j)
+        .collect();
+    net_port_value = net_port_value.iter().zip(&income_earned_f).map(|(&i, &j)| i + j).collect();
+    let net_port_out:Vec<String> = net_port_value.iter()
+        .map(|&i|format_dollar_amount(i))
+        .collect();
+    let months:Vec<String> = mort_vec.iter()
+        .map(|&[i,_]| i.to_string())
+        .collect();
+
+    let desktop: PathBuf = match dirs::desktop_dir(){
+        Some(path)=>path,
+        None=>{
+            println!("No Directory called Desktop found on system");
+            return;
+        }
+    };
+    let file_path:PathBuf = [desktop.to_str().unwrap(), "InBest For Life Results.csv"].iter().collect();
+    let display:Display = file_path.display();
+    let file = match File::create(&file_path){
+        Err(why) => panic!("Couldn't Create {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    let mut writer = Writer::from_writer(file);
+    let headers:Vec<String> = vec!["Months".to_string(),"Gross Value".to_string(),"Mortgage Value".to_string(),"Net Value".to_string(), "Capital Expenditures".to_string(),"Income".to_string()];
+    let string_data_vec:Vec<Vec<String>> = vec![months, portflio_value,mort_liab,net_port_out,cap_exp_vec,income_earned];
+    writer.serialize(headers).unwrap();
+    
+    for i in 0..string_data_vec[0].len(){
+        let row :Vec<&str> = string_data_vec.iter().map(|a| a[i].as_str()).collect();
+        writer.serialize(row).unwrap();    
+
+    }
+    writer.flush().expect("Error Writing");
+
 }

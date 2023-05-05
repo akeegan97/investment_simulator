@@ -163,6 +163,8 @@ impl eframe::App for Sim{
                 });
             }
         );
+        egui::CentralPanel::default().frame(egui::Frame::default().inner_margin(margin).fill(Color32::LIGHT_BLUE))
+            .show(ctx, |_ui|{});
         match self.selected_page{
             Some(Page::Main)=> pages::main_page::show(ctx, &mut self.product),
             Some(Page::Products)=> match self.product {
