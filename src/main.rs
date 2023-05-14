@@ -42,7 +42,7 @@ fn setup(ctx: &egui::Context) {
 }
 fn main()->Result<(),eframe::Error>{
     let options = eframe::NativeOptions{
-        initial_window_size:Some(egui::Vec2 { x: 1800.0, y: 1400.0 }),
+        initial_window_size:Some(egui::Vec2 { x: 1200.0, y: 900.0 }),
         ..Default::default()
     };
     eframe::run_native("FB_SIMS", 

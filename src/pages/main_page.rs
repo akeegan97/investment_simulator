@@ -20,8 +20,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_for_life = *selected_product == Some(Sectors::InbestForLife);
                 let ibfl_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFL.webp")).unwrap();
                 col[0].add(egui::Image::new(ibfl_logo.texture_id(ctx),ibfl_logo.size_vec2()));
-                if col[0].add(egui::SelectableLabel::new(inbest_for_life,RichText::new(IBFL).font(FontId::proportional(18.0))
-                    .color(Color32::WHITE)
+                if col[0].add(egui::SelectableLabel::new(inbest_for_life,RichText::new(IBFL).color(Color32::BLACK).font(FontId::proportional(18.0))
                     .font(FontId::proportional(18.0))))
                         .clicked(){
                             *selected_product = Some(Sectors::InbestForLife);
@@ -29,8 +28,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_for_profit = *selected_product == Some(Sectors::InbestForProfit);
                 let ibfp_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFP.webp")).unwrap();
                 col[1].add(egui::Image::new(ibfp_logo.texture_id(ctx),ibfp_logo.size_vec2()));
-                if col[1].add(egui::SelectableLabel::new(inbest_for_profit,RichText::new(IBFP).font(FontId::proportional(18.0))
-                    .color(Color32::WHITE)
+                if col[1].add(egui::SelectableLabel::new(inbest_for_profit,RichText::new(IBFP).color(Color32::BLACK).font(FontId::proportional(18.0))
                     .font(FontId::proportional(18.0))))
                         .clicked(){
                             *selected_product = Some(Sectors::InbestForProfit);
@@ -38,8 +36,7 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
                 let inbest_fund = *selected_product == Some(Sectors::InbestFund);
                 let ibfund_logo:RetainedImage = RetainedImage::from_image_bytes("Ibfl", include_bytes!("../../assets/INBFund.webp")).unwrap();
                 col[2].add(egui::Image::new(ibfund_logo.texture_id(ctx),ibfund_logo.size_vec2()));
-                if col[2].add(egui::SelectableLabel::new(inbest_fund, RichText::new(FUND).font(FontId::proportional(18.0))
-                    .color(Color32::WHITE)
+                if col[2].add(egui::SelectableLabel::new(inbest_fund, RichText::new(FUND).color(Color32::BLACK).font(FontId::proportional(18.0))
                     .font(FontId::proportional(18.0))))
                         .clicked(){
                             *selected_product = Some(Sectors::InbestFund);
@@ -50,27 +47,26 @@ pub fn show(ctx:&egui::Context, selected_product: &mut Option<Sectors>){
 
 pub const IBFL :&str= "
 InBest For Life: 
-This is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc";
+Focused around shot-term rentals
+pre-construction and market 
+units available to purchase.
+Add property management to have 
+a zero headache passive income
+solution to your portfolio";
 
 pub const IBFP: &str= "
 InBest For Profit:
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc";
+Focused around long-term rentals
+and investment properties. Typically
+a longer investment horizon than
+InBest for Life, also available
+to add property management for
+rental units if needed.";
 
 pub const FUND :&str= "
 InBest Fund:
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc
-this is filler text etc etc etc";
+alternative investment offerrings
+from promissary notes to funding
+building developements. InBest Fund
+has an investment solution for 
+everyone.";
